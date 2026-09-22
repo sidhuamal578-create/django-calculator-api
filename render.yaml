@@ -1,0 +1,35 @@
+# Render Blueprint — FREE web service + FREE PostgreSQL
+# https://render.com/docs/blueprint-spec
+#
+# Deploy via Render Dashboard → New → Blueprint → connect this GitHub repo.
+# Do NOT put real secrets in this file.
+
+databases:
+  - name: calculator-db
+    plan: free
+
+services:
+  - type: web
+    name: calculator-backend
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    preDeployCommand: python manage.py migrate
+    startCommand: gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
+    healthCheckPath: /api/
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.14.3"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: CORS_ALLOW_ALL_ORIGINS
+        value: "False"
+      # Local React origins for now. Replace/add your deployed React URL later.
+      - key: CORS_ALLOWED_ORIGINS
+        value: "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: calculator-db
+          property: connectionString
